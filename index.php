@@ -1,62 +1,81 @@
 <?php
-//5 jarres, un serpent, le joueur choisis une jarre, random pour l'attribution du serpent et la clé
 
 $prompt = "";
 $winRate = 0;
 
-function initializeGame(): int
+function initializeGame(int $difficulty): array
 {
-    return rand(1, 5);
+    // difficulté 1..3 = nombre de serpents (jarres dangereuses)
+    if ($difficulty < 1 || $difficulty > 3) {
+        return [];
+    }
+
+    $snakes = [];
+    while (count($snakes) < $difficulty) {
+        $n = rand(1, 5);
+        if (!in_array($n, $snakes, true)) {
+            $snakes[] = $n;
+        }
+    }
+    return $snakes;
 }
 
-initializeGame();
-
-// -----Game area-----
-while ($prompt != 'exit') {
-    $prompt = readline("Welcome to Jar Game 2 ! Please select an option on the menu (play, exit) : ");
-
+while ($prompt !== 'exit') {
+    $prompt = strtolower(trim(readline("Welcome to Jar Game 2! Please select an option (play, exit): ")));
     $winRate = 0;
 
-    switch (strtolower(trim($prompt))) {
-
+    switch ($prompt) {
         case 'play':
-            echo "Let's started ! There are five jars here on the 3 next room : [] [] [] [] []\n";
-            echo "All jars contains a key to go to the next room except one. One of them has a really venomous snake.\n";
+            echo "Let's start! There are five jars in the next 3 rooms: [] [] [] [] []\n";
+            echo "Some jars hide a snakes,others hide a key to enter to the next room.\n\n";
+
+            $difficultyInput = trim(readline("Choose a difficulty (1 to 3): "));
+            if ($difficultyInput === '' || !ctype_digit($difficultyInput)) {
+                echo "Please enter a number (1 to 3).\n\n";
+                break;
+            }
+
+            $difficulty = (int)$difficultyInput;
+            if ($difficulty < 1 || $difficulty > 3) {
+                echo "Difficulty must be between 1 and 3.\n\n";
+                break;
+            }
+
             while ($winRate < 3) {
-                $prompt = trim(readline("You are in front jars. To select a jar, please enter a number between 1 and 5 :"));
-                $randomNumber = initializeGame();
+                $snakeJars = initializeGame($difficulty);
 
-                if ($prompt == "" || !ctype_digit($prompt)) {
-                    echo "Invalid input ! Please enter a number.\n\n";
+                $choiceInput = trim(readline("Please select a jar between 1 and 5 : "));
+                if ($choiceInput === '' || !ctype_digit($choiceInput)) {
+                    echo "Invalid input! Please enter a number.\n\n";
                     continue;
                 }
 
-                $choice = (int)$prompt;
-
+                $choice = (int)$choiceInput;
                 if ($choice < 1 || $choice > 5) {
-                    echo "\nInvalid input. Please make sure to enter a number between 1 and 5.\n\n";
+                    echo "Invalid input. Please enter a number between 1 and 5.\n\n";
                     continue;
                 }
 
-                if ($choice == $randomNumber) {
-                    echo "Oh no ! There is a snake in jar $randomNumber !\n";
+                if (in_array($choice, $snakeJars, true)) {
+                    echo "Oh no! There is a snake in jar $choice!\n";
                     echo "Game Over.\n\n";
                     $winRate = 0;
                     continue;
                 }
+
                 $winRate++;
-                $roomLeft = 3 - $winRate;
-                echo "Good Job ! You can enter to the new room ! $roomLeft room left.\n\n";
+                $roomsLeft = 3 - $winRate;
+                echo "Good job! You found a key. $roomsLeft room(s) left.\n\n";
             }
-            if ($winRate >= 3) {
-                echo "Congratulation ! You won 3 times!\n\n";
-            }
+
+            echo "Congratulations! You won 3 times!\n\n";
             break;
 
         case 'exit':
             break;
+
         default:
-            echo "Unknown option, please enter play or exit.\n";
+            echo "Unknown option, please type play or exit.\n\n";
             break;
     }
 }
